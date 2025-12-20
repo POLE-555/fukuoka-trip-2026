@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 福岡智慧旅</title>
+    <title>2026 福岡</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,14 +51,17 @@
         <header class="sticky top-0 z-50 bg-[#f8f5e6]/95 backdrop-blur-sm pt-8 pb-4 px-5">
             <div class="text-center mb-6 relative">
                 <div class="text-[10px] text-gray-400 tracking-[0.3em] font-bold">2026</div>
-                <h1 class="text-3xl font-black serif-font text-gray-800 tracking-tighter">福岡旅</h1>
+                <h1 class="text-3xl font-black serif-font text-gray-800 tracking-tighter">福岡</h1>
             </div>
-            <div class="flex overflow-x-auto hide-scrollbar gap-6 py-2 border-b border-gray-200/50">
+            <div v-show="activeTab === 'trip'" class="flex overflow-x-auto hide-scrollbar gap-6 py-2 border-b border-gray-200/50">
                 <div v-for="(day, index) in itinerary" :key="index" @click="activeDayIndex = index"
                      :class="['flex-shrink-0 flex flex-col items-center cursor-pointer', activeDayIndex === index ? 'date-active' : 'text-gray-400']">
                     <span class="text-[9px] font-bold mb-1">{{day.week}}</span>
                     <span class="text-2xl font-serif font-black">{{day.date.split('-')[2]}}</span>
                 </div>
+            </div>
+            <div v-show="activeTab === 'others'" class="py-2 border-b border-gray-200/50 text-center font-bold text-gray-400 text-xs tracking-widest uppercase">
+                美食與景點口袋名單
             </div>
         </header>
 
@@ -67,7 +70,7 @@
                 <div class="card p-4 mb-8">
                     <div class="flex justify-between items-center mb-3">
                         <div class="flex items-center gap-2">
-                            <i class="fas fa-clock text-[#c0392b] text-[10px]"></i>
+                          
                             <span class="text-[11px] font-black text-gray-700 tracking-widest">{{ smartLocationName }} 預報</span>
                         </div>
                         <span class="text-[9px] text-gray-300">{{ currentSelectedDate }}</span>
@@ -82,22 +85,10 @@
                     </div>
                 </div>
 
-                <div class="mb-8 pl-4 border-l-4 border-[#c0392b]">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="w-full">
-                            <span class="text-[10px] text-gray-400 font-bold block mb-1 tracking-widest">入住飯店</span>
-                            <div class="font-serif font-bold text-lg text-gray-800">{{ hotel.name }}</div>
-                        </div>
-                        <button @click="openMaps(hotel.name)" class="text-blue-500 ml-4"><i class="fas fa-location-arrow text-xl"></i></button>
-                    </div>
-                </div>
-
                 <div id="event-list" class="space-y-4">
                     <div v-for="(event, eIndex) in itinerary[activeDayIndex]?.events" :key="eIndex" class="card p-4 flex items-center">
                         <div class="drag-handle"><i class="fas fa-grip-lines-vertical text-[10px]"></i></div>
-                        <div class="time-col">
-                            <input v-model="event.time" @change="syncData" class="time-input">
-                        </div>
+                        <div class="time-col"><input v-model="event.time" @change="syncData" class="time-input"></div>
                         <div class="flex-grow">
                             <div class="flex items-center mb-0.5">
                                 <input v-model="event.location" @change="syncData" class="edit-input font-bold text-sm text-gray-800" placeholder="地點">
@@ -111,7 +102,7 @@
                 <button @click="addEvent" class="w-full py-4 mt-6 text-[11px] font-bold text-gray-300 border border-dashed border-gray-200 rounded-2xl">+ 新增行程項目</button>
             </div>
 
-            <div v-show="activeTab === 'fx'" class="p-4">
+            <div v-show="activeTab === 'fx'">
                 <div class="card p-8 text-center space-y-12">
                     <h2 class="text-2xl font-serif font-bold text-gray-800">匯率換算</h2>
                     <div>
@@ -125,17 +116,40 @@
                     </div>
                 </div>
             </div>
+
+            <div v-show="activeTab === 'others'">
+                <div class="space-y-4">
+                    <div v-for="(item, oIndex) in otherList" :key="oIndex" class="card p-5 flex items-center gap-4 transition-all">
+                        <div class="flex-grow">
+                            <div class="flex items-center gap-2 mb-1">
+                                <input v-model="item.name" @change="syncData" class="edit-input font-black text-base text-gray-800" placeholder="美食或景點名稱">
+                                <button @click="openMaps(item.name)" class="text-blue-500 hover:scale-110 transition-transform">
+                                    <i class="fas fa-store text-lg"></i>
+                                </button>
+                            </div>
+                            <input v-model="item.note" @change="syncData" class="edit-input text-xs text-gray-400" placeholder="備註">
+                        </div>
+                        <button @click="removeOther(oIndex)" class="text-gray-200 hover:text-red-400 p-1">
+                            <i class="fas fa-trash-can text-[10px]"></i>
+                        </button>
+                    </div>
+                    <button @click="addOther" class="w-full py-4 mt-2 text-[11px] font-bold text-gray-300 border border-dashed border-gray-200 rounded-2xl">+ 新增名單</button>
+                </div>
+            </div>
         </main>
 
-        <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[80%] h-14 bg-white/90 backdrop-blur-md shadow-2xl rounded-full flex justify-around items-center px-6 z-50">
-            <button @click="activeTab = 'trip'" :class="['flex flex-col items-center gap-1', activeTab === 'trip' ? 'text-[#c0392b]' : 'text-gray-300']">
-                <i class="fas fa-list-ul text-lg"></i>
-                <span class="text-[10px] font-bold">每日行程</span>
+        <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] h-16 bg-white/90 backdrop-blur-md shadow-2xl rounded-full flex justify-around items-center px-4 z-50">
+            <button @click="activeTab = 'trip'" :class="['flex flex-col items-center gap-1 w-1/3', activeTab === 'trip' ? 'text-[#c0392b]' : 'text-gray-300']">
+                <i class="fas fa-calendar-day text-lg"></i>
+                <span class="text-[9px] font-bold">行程</span>
             </button>
-            <div class="w-[1px] h-4 bg-gray-100"></div>
-            <button @click="activeTab = 'fx'" :class="['flex flex-col items-center gap-1', activeTab === 'fx' ? 'text-[#c0392b]' : 'text-gray-300']">
+            <button @click="activeTab = 'others'" :class="['flex flex-col items-center gap-1 w-1/3', activeTab === 'others' ? 'text-[#c0392b]' : 'text-gray-300']">
+                <i class="fas fa-utensils text-lg"></i>
+                <span class="text-[9px] font-bold">其他</span>
+            </button>
+            <button @click="activeTab = 'fx'" :class="['flex flex-col items-center gap-1 w-1/3', activeTab === 'fx' ? 'text-[#c0392b]' : 'text-gray-300']">
                 <i class="fas fa-calculator text-lg"></i>
-                <span class="text-[10px] font-bold">匯率換算</span>
+                <span class="text-[9px] font-bold">匯率</span>
             </button>
         </nav>
     </div>
@@ -151,21 +165,18 @@
                 const rate = 0.21;
                 const hotel = ref({ name: '', phone: '' });
                 const itinerary = ref([]);
+                const otherList = ref([]); // 新增：其他清單
                 const weatherData = ref({}); 
                 const hourlyWeather = ref([]);
 
-                // 智慧地點匹配：根據「現在時間」找出行程中最接近的項目地點
                 const smartLocationName = computed(() => {
                     const now = new Date();
                     const currentHour = now.getHours();
                     const events = itinerary.value[activeDayIndex.value]?.events || [];
-                    
-                    // 找出時間大於等於現在時間的第一個行程
                     const upcomingEvent = events.find(e => {
                         const [h] = e.time.split(':').map(Number);
                         return h >= currentHour;
                     });
-
                     return upcomingEvent?.location || (events[0]?.location) || "福岡市";
                 });
 
@@ -178,6 +189,7 @@
                         if (data) {
                             itinerary.value = data.itinerary || [];
                             hotel.value = data.hotel || { name: '', phone: '' };
+                            otherList.value = data.otherList || []; // 載入其他清單
                             if (data.sharedFX) { jpy.value = data.sharedFX.jpy; twd.value = data.sharedFX.twd; }
                         }
                     });
@@ -198,20 +210,13 @@
                     const currentHour = now.getHours();
                     const selectedDate = currentSelectedDate.value;
                     const todayDateStr = now.toISOString().split('T')[0];
-
                     const display = [];
                     weatherData.value.time.forEach((t, index) => {
                         const [date, time] = t.split('T');
                         const h = parseInt(time.split(':')[0]);
-
                         if (date === selectedDate) {
-                            // 如果是今天，過濾掉過去的時間；如果不是今天，顯示全天
                             if (date !== todayDateStr || h >= currentHour) {
-                                display.push({ 
-                                    time: time, temp: weatherData.value.temperature_2m[index], 
-                                    code: weatherData.value.weathercode[index],
-                                    rain: weatherData.value.precipitation_probability[index]
-                                });
+                                display.push({ time: time, temp: weatherData.value.temperature_2m[index], code: weatherData.value.weathercode[index], rain: weatherData.value.precipitation_probability[index] });
                             }
                         }
                     });
@@ -227,34 +232,47 @@
 
                 const initSortable = () => {
                     const el = document.getElementById('event-list');
-                    if (!el) return;
-                    Sortable.create(el, {
-                        animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost',
-                        onEnd: (evt) => {
-                            const events = itinerary.value[activeDayIndex.value].events;
-                            const item = events.splice(evt.oldIndex, 1)[0];
-                            events.splice(evt.newIndex, 0, item);
-                            syncData();
-                        }
-                    });
+                    if (el) {
+                        Sortable.create(el, {
+                            animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost',
+                            onEnd: (evt) => {
+                                const events = itinerary.value[activeDayIndex.value].events;
+                                const item = events.splice(evt.oldIndex, 1)[0];
+                                events.splice(evt.newIndex, 0, item);
+                                syncData();
+                            }
+                        });
+                    }
                 };
 
                 const syncData = () => {
                     window.fb.update(window.fb.ref(window.fb.db, '/'), {
                         itinerary: JSON.parse(JSON.stringify(itinerary.value)),
-                        hotel: hotel.value
+                        hotel: hotel.value,
+                        otherList: JSON.parse(JSON.stringify(otherList.value)) // 同步其他清單
                     });
                 };
 
                 watch(activeDayIndex, () => { updateHourlyDisplay(); nextTick(() => initSortable()); });
+                watch(activeTab, () => { if(activeTab.value === 'trip') nextTick(() => initSortable()); });
 
-                const openMaps = (loc) => { if(loc) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`, '_blank'); };
+                const openMaps = (loc) => { if(loc) window.open(`https://www.google.com/maps/search/${encodeURIComponent(loc)}`, '_blank'); };
+                
+                // 行程操作
                 const addEvent = () => {
                     if (!itinerary.value[activeDayIndex.value].events) itinerary.value[activeDayIndex.value].events = [];
                     itinerary.value[activeDayIndex.value].events.push({ time: "12:00", location: "", desc: "" });
                     syncData();
                 };
-                const removeEvent = (eIndex) => { if (confirm("確定刪除此項目？")) { itinerary.value[activeDayIndex.value].events.splice(eIndex, 1); syncData(); } };
+                const removeEvent = (eIndex) => { if (confirm("確定刪除此行程？")) { itinerary.value[activeDayIndex.value].events.splice(eIndex, 1); syncData(); } };
+                
+                // 其他清單操作
+                const addOther = () => {
+                    otherList.value.push({ name: "", note: "" });
+                    syncData();
+                };
+                const removeOther = (oIndex) => { if (confirm("確定刪除此名單項目？")) { otherList.value.splice(oIndex, 1); syncData(); } };
+
                 const convertFX = (type) => {
                     let j, t;
                     if (type === 'jpy') { j = jpy.value; t = j ? Math.round(j * rate) : null; }
@@ -265,9 +283,9 @@
                 onMounted(() => { initFirebase(); fetchWeather(); initSortable(); });
 
                 return { 
-                    activeTab, activeDayIndex, itinerary, hotel, jpy, twd, 
+                    activeTab, activeDayIndex, itinerary, hotel, jpy, twd, otherList,
                     hourlyWeather, currentSelectedDate, smartLocationName,
-                    convertFX, syncData, openMaps, addEvent, removeEvent, getWeatherIcon 
+                    convertFX, syncData, openMaps, addEvent, removeEvent, addOther, removeOther, getWeatherIcon 
                 };
             }
         }).mount('#app');
