@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 福岡</title>
+    <title>2026 福岡智慧旅</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
@@ -28,65 +29,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         window.fb = { db, ref, onValue, update, set };
-
-        // 同步所有行程資料 (包含補足的 3/10-3/12)
-        window.syncCloudData = async () => {
-            const data = {
-                hotel: { name: "Best Western Plus 福岡天神南", phone: "+81 927187700" },
-                itinerary: [
-                    { date: "2026-03-03", week: "週二", events: [{time: "13:00", location: "高雄小港機場", desc: "準備出發"}, {time: "15:25", location: "福岡空港", desc: "虎航 IT270 抵達"}] },
-                    { date: "2026-03-04", week: "週三", events: [{time: "早上", location: "櫛田神社", desc: "參拜"}, {time: "下午", location: "天神商圈", desc: "購物"}] },
-                    { 
-                        date: "2026-03-05", week: "週四", 
-                        link: "https://www.kkday.com/zh-tw/product/266452",
-                        events: [
-                            {time: "07:50", location: "LAWSON（羅森）福岡東方飯店店", desc: "集合 (提早10分鐘)"},
-                            {time: "08:00", location: "阿蘇一日遊開始", desc: "準時出發"},
-                            {time: "11:00", location: "阿蘇火山口", desc: "活火口絕景"},
-                            {time: "11:50", location: "草千里", desc: "大草原散策"},
-                            {time: "14:20", location: "高千穗峽", desc: "真名井瀑布"},
-                            {time: "18:00", location: "博多站", desc: "返抵筑紫口"}
-                        ] 
-                    },
-                    { date: "2026-03-06", week: "週五", events: [{time: "全天", location: "太宰府天滿宮", desc: "梅枝餅"}] },
-                    { 
-                        date: "2026-03-07", week: "週六", 
-                        link: "https://www.kkday.com/zh-tw/product/175897",
-                        events: [
-                            {time: "08:20", location: "LAWSON（羅森）福岡東方飯店店", desc: "GOGODAY 小黃旗"},
-                            {time: "08:30", location: "九州動物園行程", desc: "準時出發"},
-                            {time: "10:30", location: "由布院", desc: "金鱗湖散策"},
-                            {time: "13:10", location: "自然動物公園", desc: "叢林巴士體驗"},
-                            {time: "15:40", location: "海地獄", desc: "湛藍地熱"},
-                            {time: "16:20", location: "灶地獄", desc: "別府名湯"},
-                            {time: "19:00", location: "博多站", desc: "返回博多"}
-                        ] 
-                    },
-                    { date: "2026-03-08", week: "週日", events: [{time: "全天", location: "門司港", desc: "燒咖哩"}] },
-                    { 
-                        date: "2026-03-09", week: "週一", 
-                        link: "https://www.klook.com/zh-TW/activity/114628",
-                        events: [
-                            {time: "08:20", location: "LAWSON（羅森）福岡東方飯店店", desc: "Easy Go 標識"},
-                            {time: "08:30", location: "系島絕景之旅", desc: "準時出發"},
-                            {time: "09:30", location: "白絲瀑布", desc: "山林涼爽"},
-                            {time: "10:40", location: "櫻井二見浦", desc: "白色鳥居"},
-                            {time: "11:50", location: "海邊鞦韆", desc: "美照首選"},
-                            {time: "12:40", location: "一蘭之森", desc: "拉麵工廠"},
-                            {time: "16:10", location: "宮地嶽神社", desc: "夕陽光道"},
-                            {time: "18:30", location: "博多站", desc: "結束"}
-                        ] 
-                    },
-                    { date: "2026-03-10", week: "週二", events: [{time: "全天", location: "福岡天神", desc: "百貨購物"}] },
-                    { date: "2026-03-11", week: "週三", events: [{time: "全天", location: "博多運河城", desc: "噴水秀/拉麵"}] },
-                    { date: "2026-03-12", week: "週四", events: [{time: "全天", location: "大濠公園", desc: "美術館散策"}] },
-                    { date: "2026-03-13", week: "週五", events: [{time: "19:55", location: "福岡空港", desc: "回程 IT271"}] }
-                ],
-                sharedFX: { jpy: 0, twd: 0 }
-            };
-            await set(ref(db, '/'), data);
-            alert("雲端資料已同步補完（共 11 天）！");
-        };
     </script>
 
     <style>
@@ -98,10 +40,9 @@
         .date-active::after { content: ''; position: absolute; bottom: 0; left: 10%; width: 80%; height: 3px; background: var(--accent); }
         .card { background: #ffffff; border-radius: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.01); }
         .edit-input { background: transparent; border: none; width: 100%; outline: none; }
-        
         .time-col { width: 52px; min-width: 52px; flex-shrink: 0; border-right: 1px solid #f3f4f6; padding-right: 0.35rem; margin-right: 0.65rem; }
         .time-input { font-family: 'Noto Serif TC', serif; font-weight: 900; text-align: center; background: transparent; border: none; outline: none; width: 100%; font-size: 15px; }
-        .link-btn { display: inline-flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid #eee; padding: 0.5rem 1rem; border-radius: 50px; font-size: 0.75rem; font-weight: bold; color: #666; }
+        .drag-handle { cursor: grab; color: #eee; padding-right: 8px; display: flex; align-items: center; }
     </style>
 </head>
 <body class="antialiased pb-28">
@@ -109,11 +50,9 @@
         
         <header class="sticky top-0 z-50 bg-[#f8f5e6]/95 backdrop-blur-sm pt-8 pb-4 px-5">
             <div class="text-center mb-6 relative">
-                
                 <div class="text-[10px] text-gray-400 tracking-[0.3em] font-bold">2026</div>
                 <h1 class="text-3xl font-black serif-font text-gray-800 tracking-tighter">福岡旅</h1>
             </div>
-            
             <div class="flex overflow-x-auto hide-scrollbar gap-6 py-2 border-b border-gray-200/50">
                 <div v-for="(day, index) in itinerary" :key="index" @click="activeDayIndex = index"
                      :class="['flex-shrink-0 flex flex-col items-center cursor-pointer', activeDayIndex === index ? 'date-active' : 'text-gray-400']">
@@ -127,48 +66,49 @@
             <div v-show="activeTab === 'trip'">
                 <div class="card p-4 mb-8">
                     <div class="flex justify-between items-center mb-3">
-                        <span class="text-[11px] font-black text-gray-700 tracking-widest">福岡市預報</span>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-clock text-[#c0392b] text-[10px]"></i>
+                            <span class="text-[11px] font-black text-gray-700 tracking-widest">{{ smartLocationName }} 預報</span>
+                        </div>
                         <span class="text-[9px] text-gray-300">{{ currentSelectedDate }}</span>
                     </div>
                     <div v-if="hourlyWeather.length > 0" class="flex overflow-x-auto hide-scrollbar gap-5 pb-1">
                         <div v-for="(h, i) in hourlyWeather" :key="i" class="flex flex-col items-center min-w-[42px]">
-                            <span class="text-[9px] text-gray-400 mb-2">{{ h.time }}</span>
-                            <i :class="getWeatherIcon(h.code)" class="text-base mb-2 text-blue-200"></i>
+                            <span class="text-[9px] text-gray-400 mb-1">{{ h.time }}</span>
+                            <i :class="getWeatherIcon(h.code)" class="text-base mb-1 text-blue-200"></i>
                             <span class="font-bold text-xs">{{ Math.round(h.temp) }}°</span>
+                            <span class="text-[8px] text-blue-400 font-bold">{{ h.rain }}%</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="mb-8 pl-4 border-l-4 border-[#c0392b]">
-                    <div class="flex justify-between items-start mb-4">
+                    <div class="flex justify-between items-center mb-4">
                         <div class="w-full">
                             <span class="text-[10px] text-gray-400 font-bold block mb-1 tracking-widest">入住飯店</span>
-                            <input v-model="hotel.name" @change="syncData" class="edit-input font-serif font-bold text-lg text-gray-800">
+                            <div class="font-serif font-bold text-lg text-gray-800">{{ hotel.name }}</div>
                         </div>
-                        <button @click="openMaps(hotel.name)" class="text-blue-500 ml-4 pt-1"><i class="fas fa-location-arrow text-lg"></i></button>
-                    </div>
-                    <div v-if="itinerary[activeDayIndex]?.link">
-                        <a :href="itinerary[activeDayIndex].link" target="_blank" class="link-btn shadow-sm">
-                            <i class="fas fa-globe-asia text-[#c0392b]"></i> 開啟行程網頁
-                        </a>
+                        <button @click="openMaps(hotel.name)" class="text-blue-500 ml-4"><i class="fas fa-location-arrow text-xl"></i></button>
                     </div>
                 </div>
 
-                <div class="space-y-4">
+                <div id="event-list" class="space-y-4">
                     <div v-for="(event, eIndex) in itinerary[activeDayIndex]?.events" :key="eIndex" class="card p-4 flex items-center">
+                        <div class="drag-handle"><i class="fas fa-grip-lines-vertical text-[10px]"></i></div>
                         <div class="time-col">
                             <input v-model="event.time" @change="syncData" class="time-input">
                         </div>
                         <div class="flex-grow">
                             <div class="flex items-center mb-0.5">
-                                <input v-model="event.location" @change="syncData" class="edit-input font-bold text-sm text-gray-800">
-                                <button @click="openMaps(event.location)" class="ml-2 text-gray-200"><i class="fas fa-location-dot text-[10px]"></i></button>
+                                <input v-model="event.location" @change="syncData" class="edit-input font-bold text-sm text-gray-800" placeholder="地點">
+                                <button @click="openMaps(event.location)" class="ml-2 text-blue-400/60"><i class="fas fa-location-dot text-sm"></i></button>
                             </div>
-                            <input v-model="event.desc" @change="syncData" class="edit-input text-[11px] text-gray-400">
+                            <input v-model="event.desc" @change="syncData" class="edit-input text-[11px] text-gray-400" placeholder="備註描述">
                         </div>
+                        <button @click="removeEvent(eIndex)" class="ml-2 text-gray-200 hover:text-red-400 p-1"><i class="fas fa-trash-can text-[10px]"></i></button>
                     </div>
-                    <button @click="addEvent" class="w-full py-4 text-[11px] font-bold text-gray-300 border border-dashed border-gray-200 rounded-2xl">+ 新增行程項目</button>
                 </div>
+                <button @click="addEvent" class="w-full py-4 mt-6 text-[11px] font-bold text-gray-300 border border-dashed border-gray-200 rounded-2xl">+ 新增行程項目</button>
             </div>
 
             <div v-show="activeTab === 'fx'" class="p-4">
@@ -201,7 +141,7 @@
     </div>
 
     <script>
-        const { createApp, ref, onMounted, watch, computed } = Vue;
+        const { createApp, ref, onMounted, watch, computed, nextTick } = Vue;
         createApp({
             setup() {
                 const activeTab = ref('trip');
@@ -213,6 +153,21 @@
                 const itinerary = ref([]);
                 const weatherData = ref({}); 
                 const hourlyWeather = ref([]);
+
+                // 智慧地點匹配：根據「現在時間」找出行程中最接近的項目地點
+                const smartLocationName = computed(() => {
+                    const now = new Date();
+                    const currentHour = now.getHours();
+                    const events = itinerary.value[activeDayIndex.value]?.events || [];
+                    
+                    // 找出時間大於等於現在時間的第一個行程
+                    const upcomingEvent = events.find(e => {
+                        const [h] = e.time.split(':').map(Number);
+                        return h >= currentHour;
+                    });
+
+                    return upcomingEvent?.location || (events[0]?.location) || "福岡市";
+                });
 
                 const currentSelectedDate = computed(() => itinerary.value[activeDayIndex.value]?.date || '');
 
@@ -230,7 +185,7 @@
 
                 const fetchWeather = async () => {
                     try {
-                        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&hourly=temperature_2m,weathercode&timezone=Asia%2FTokyo&forecast_days=14`);
+                        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&hourly=temperature_2m,weathercode,precipitation_probability&timezone=Asia%2FTokyo&forecast_days=14`);
                         const data = await res.json();
                         weatherData.value = data.hourly;
                         updateHourlyDisplay();
@@ -239,23 +194,49 @@
 
                 const updateHourlyDisplay = () => {
                     if (!weatherData.value.time) return;
+                    const now = new Date();
+                    const currentHour = now.getHours();
                     const selectedDate = currentSelectedDate.value;
+                    const todayDateStr = now.toISOString().split('T')[0];
+
                     const display = [];
                     weatherData.value.time.forEach((t, index) => {
-                        if (t.startsWith(selectedDate)) {
-                            display.push({ time: t.split('T')[1], temp: weatherData.value.temperature_2m[index], code: weatherData.value.weathercode[index] });
+                        const [date, time] = t.split('T');
+                        const h = parseInt(time.split(':')[0]);
+
+                        if (date === selectedDate) {
+                            // 如果是今天，過濾掉過去的時間；如果不是今天，顯示全天
+                            if (date !== todayDateStr || h >= currentHour) {
+                                display.push({ 
+                                    time: time, temp: weatherData.value.temperature_2m[index], 
+                                    code: weatherData.value.weathercode[index],
+                                    rain: weatherData.value.precipitation_probability[index]
+                                });
+                            }
                         }
                     });
                     hourlyWeather.value = display;
                 };
-
-                watch(activeDayIndex, updateHourlyDisplay);
 
                 const getWeatherIcon = (code) => {
                     if (code <= 1) return 'fas fa-sun';
                     if (code <= 3) return 'fas fa-cloud-sun';
                     if (code >= 61) return 'fas fa-cloud-rain';
                     return 'fas fa-cloud';
+                };
+
+                const initSortable = () => {
+                    const el = document.getElementById('event-list');
+                    if (!el) return;
+                    Sortable.create(el, {
+                        animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost',
+                        onEnd: (evt) => {
+                            const events = itinerary.value[activeDayIndex.value].events;
+                            const item = events.splice(evt.oldIndex, 1)[0];
+                            events.splice(evt.newIndex, 0, item);
+                            syncData();
+                        }
+                    });
                 };
 
                 const syncData = () => {
@@ -265,6 +246,15 @@
                     });
                 };
 
+                watch(activeDayIndex, () => { updateHourlyDisplay(); nextTick(() => initSortable()); });
+
+                const openMaps = (loc) => { if(loc) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`, '_blank'); };
+                const addEvent = () => {
+                    if (!itinerary.value[activeDayIndex.value].events) itinerary.value[activeDayIndex.value].events = [];
+                    itinerary.value[activeDayIndex.value].events.push({ time: "12:00", location: "", desc: "" });
+                    syncData();
+                };
+                const removeEvent = (eIndex) => { if (confirm("確定刪除此項目？")) { itinerary.value[activeDayIndex.value].events.splice(eIndex, 1); syncData(); } };
                 const convertFX = (type) => {
                     let j, t;
                     if (type === 'jpy') { j = jpy.value; t = j ? Math.round(j * rate) : null; }
@@ -272,22 +262,13 @@
                     window.fb.update(window.fb.ref(window.fb.db, 'sharedFX'), { jpy: j, twd: t });
                 };
 
-                const openMaps = (loc) => { 
-                    if(loc) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`, '_blank'); 
-                };
+                onMounted(() => { initFirebase(); fetchWeather(); initSortable(); });
 
-                const addEvent = () => {
-                    if (!itinerary.value[activeDayIndex.value].events) itinerary.value[activeDayIndex.value].events = [];
-                    itinerary.value[activeDayIndex.value].events.push({ time: "12:00", location: "新地點", desc: "" });
-                    syncData();
+                return { 
+                    activeTab, activeDayIndex, itinerary, hotel, jpy, twd, 
+                    hourlyWeather, currentSelectedDate, smartLocationName,
+                    convertFX, syncData, openMaps, addEvent, removeEvent, getWeatherIcon 
                 };
-
-                const handleSync = () => { 
-                    if(confirm("即將從雲端更新並同步所有行程架構（含補全日期），是否繼續？")) window.syncCloudData(); 
-                };
-
-                onMounted(() => { initFirebase(); fetchWeather(); });
-                return { activeTab, activeDayIndex, itinerary, hotel, jpy, twd, hourlyWeather, currentSelectedDate, convertFX, syncData, openMaps, handleSync, addEvent, getWeatherIcon };
             }
         }).mount('#app');
     </script>
