@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>福岡旅遊 2026 - 雲端同步版</title>
+    <title>福岡旅遊 2026 - 雲端同步氣象版</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -13,13 +13,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_KEY"></script>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // 🔑 請在此填入您從 Firebase Console 複製的 Config
+        // 🔑 請填入您的 Firebase 配置
         const firebaseConfig = {
   apiKey: "AIzaSyDMB5dU2aRAZ-mt9_HNXP02_9_B2qydfBg",
   authDomain: "fukuoka-trip-c2570.firebaseapp.com",
@@ -33,71 +31,86 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        window.fb = { db, ref, onValue, update, set };
 
-        // 掛載到全域讓 Vue 存取
-        window.fbDB = db; window.fbRef = ref; window.fbOnValue = onValue; window.fbSet = set; window.fbUpdate = update;
-
-        // 初始化上傳函式 (僅需執行一次)
-        window.uploadToCloud = async () => {
-            const initData = {
+        // 初始化 3/3 - 3/13 行程
+        window.resetCloudData = async () => {
+            const data = {
                 hotel: { name: "Best Western Plus 福岡天神南", phone: "+81 927187700" },
                 itinerary: [
-                    { date: "03-03", week: "週二", coords: [{lat: 33.5859, lng: 130.4439}], events: [{time: "15:25", location: "抵達福岡空港", desc: "虎航 IT270"}, {time: "晚上", location: "麵屋兼虎 天神本店", desc: "知名沾麵"}]},
-                    { date: "03-04", week: "週三", coords: [{lat: 33.5932, lng: 130.4105}], events: [{time: "早上", location: "運河城 & 櫛田神社", desc: "市區參拜"}, {time: "晚上", location: "藥院燒肉", desc: "晚餐預約"}]},
-                    { date: "03-05", week: "週四", coords: [{lat: 32.7150, lng: 131.3015}], events: [{time: "全天", location: "高千穗/阿蘇山一日遊", desc: "九州自然景觀"}]},
-                    { date: "03-06", week: "週五", coords: [{lat: 33.5215, lng: 130.5348}], events: [{time: "全天", location: "太宰府", desc: "天滿宮參拜"}]},
-                    { date: "03-07", week: "週六", coords: [{lat: 33.3444, lng: 131.3283}], events: [{time: "全天", location: "由布院/自然動物園", desc: "KKday 專屬團"}]},
-                    { date: "03-08", week: "週日", coords: [{lat: 33.9448, lng: 130.9634}], events: [{time: "全天", location: "門司港", desc: "燒咖哩與古蹟"}]},
-                    { date: "03-09", week: "週一", coords: [{lat: 33.6366, lng: 130.1982}], events: [{time: "全天", location: "糸島一日遊", desc: "海邊鞦韆"}]},
-                    { date: "03-10", week: "週二", coords: [{lat: 33.6133, lng: 130.3015}], events: [{time: "全天", location: "能古島", desc: "渡船賞花"}]},
-                    { date: "03-11", week: "週三", coords: [{lat: 33.5859, lng: 130.4354}], events: [{time: "全天", location: "LaLaport 福岡", desc: "看 1:1 鋼彈"}]},
-                    { date: "03-12", week: "週四", coords: [{lat: 33.5912, lng: 130.3989}], events: [{time: "全天", location: "天神最後採買", desc: "購物衝刺"}]},
-                    { date: "03-13", week: "週五", coords: [{lat: 33.5859, lng: 130.4439}], events: [{time: "19:55", location: "福岡空港", desc: "虎航 IT271"}]}
+                    { date: "03-03", week: "週二", events: [{time: "15:25", location: "福岡空港", desc: "搭機 IT270"}, {time: "晚上", location: "麵屋兼虎 天神本店", desc: "知名沾麵"}] },
+                    { date: "03-04", week: "週三", events: [{time: "早上", location: "運河城 櫛田神社", desc: "市區參拜"}, {time: "晚上", location: "藥院燒肉", desc: "晚餐"}] },
+                    { date: "03-05", week: "週四", events: [{time: "全天", location: "高千穗/阿蘇山", desc: "九州一日遊"}] },
+                    { date: "03-06", week: "週五", events: [{time: "全天", location: "太宰府", desc: "天滿宮參拜"}] },
+                    { date: "03-07", week: "週六", events: [{time: "全天", location: "由布院/自然動物園", desc: "KKday 專屬團"}] },
+                    { date: "03-08", week: "週日", events: [{time: "全天", location: "門司港", desc: "燒咖哩與古蹟"}] },
+                    { date: "03-09", week: "週一", events: [{time: "全天", location: "糸島一日遊", desc: "海邊景觀"}] },
+                    { date: "03-10", week: "週二", events: [{time: "全天", location: "能古島", desc: "渡船賞花"}] },
+                    { date: "03-11", week: "週三", events: [{time: "全天", location: "LaLaport 福岡", desc: "1:1 鋼彈"}] },
+                    { date: "03-12", week: "週四", events: [{time: "全天", location: "運河城 櫛田神社", desc: "最後採買"}] },
+                    { date: "03-13", week: "週五", events: [{time: "晚上", location: "福岡空港", desc: "回程搭機 IT271"}] }
                 ],
                 sharedFX: { jpy: 0, twd: 0 }
             };
-            await set(ref(db, '/'), initData);
-            alert("雲端資料初始化成功！");
+            await set(ref(db, '/'), data);
+            alert("雲端資料已重設成功！");
         };
     </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { background-color: #fcfcfc; font-family: 'Noto Sans TC', sans-serif; -webkit-tap-highlight-color: transparent; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body { background-color: #fcfcfc; font-family: 'Noto Sans TC', sans-serif; }
+        .date-active { background: #1a1a1a; color: white !important; transform: scale(1.05); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .date-active { background: #1a1a1a; color: white !important; transform: translateY(-4px); }
-        #google-map { height: 60vh; width: 100%; border-radius: 24px; }
-        .edit-input { background: transparent; border: none; width: 100%; font-weight: bold; border-bottom: 1px dashed #eee; transition: 0.3s; }
-        .edit-input:focus { outline: none; border-bottom-color: #000; background: #f9f9f9; }
-        .tab-bar { box-shadow: 0 -5px 20px rgba(0,0,0,0.05); }
+        .fx-input { border: none; border-bottom: 2px solid #f0f0f0; background: transparent; transition: 0.3s; width: 100%; text-align: right; }
+        .fx-input:focus { outline: none; border-bottom-color: #1a1a1a; }
     </style>
 </head>
-<body class="antialiased">
-    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col pb-24 bg-white relative">
+<body class="antialiased pb-24">
+    <div id="app" class="max-w-md mx-auto min-h-screen bg-white relative shadow-2xl">
         
-        <header class="sticky top-0 z-[1000] bg-white/90 backdrop-blur-md pt-6 pb-2 px-5 border-b">
+        <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md pt-6 pb-2 px-5 border-b">
             <div class="flex justify-between items-center mb-4">
-                <h1 class="text-xl font-bold tracking-tight">福岡 2026</h1>
-                <button @click="forceSync" class="text-[10px] bg-green-50 text-green-600 px-2 py-1 rounded-full font-bold">
-                    <i class="fas fa-cloud-upload-alt mr-1"></i> 初始化雲端
-                </button>
+                <h1 class="text-xl font-black italic tracking-tighter">FUKUOKA 2026</h1>
+                <button @click="forceReset" class="text-[9px] text-gray-300 hover:text-red-400">雲端資料重新整理</button>
             </div>
+            
             <div class="flex overflow-x-auto hide-scrollbar gap-3 py-2">
-                <div v-for="(day, index) in itinerary" :key="index" @click="changeDay(index)"
+                <div v-for="(day, index) in itinerary" :key="index" @click="activeDayIndex = index"
                      :class="['flex-shrink-0 w-12 h-16 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all', 
                               activeDayIndex === index ? 'date-active shadow-lg' : 'bg-gray-50 text-gray-400']">
                     <span class="text-[8px] font-bold">{{day.week}}</span>
-                    <span class="text-base font-bold">{{day.date.split('-')[1]}}</span>
+                    <span class="text-base font-black">{{day.date.split('-')[1]}}</span>
                 </div>
             </div>
         </header>
 
-        <main class="flex-grow">
+        <main>
+            <div class="flex border-b text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                <button @click="activeTab = 'trip'" :class="activeTab === 'trip' ? 'text-black border-b-2 border-black' : ''" class="flex-1 py-4">每日行程</button>
+                <button @click="activeTab = 'fx'" :class="activeTab === 'fx' ? 'text-black border-b-2 border-black' : ''" class="flex-1 py-4">匯率換算</button>
+            </div>
+
             <div v-show="activeTab === 'trip'" class="p-6">
-                <div class="mb-6 p-4 bg-gray-50 rounded-2xl">
-                    <span class="text-[10px] text-gray-400 font-bold uppercase block mb-1">住宿飯店</span>
-                    <input v-model="hotel.name" @change="updateHotel" class="edit-input text-lg">
-                    <input v-model="hotel.phone" @change="updateHotel" class="edit-input text-xs text-gray-500 font-mono mt-1">
+                <div class="mb-8 bg-gradient-to-br from-sky-400 to-blue-600 rounded-3xl p-5 text-white shadow-xl flex justify-between items-center">
+                    <div>
+                        <div class="text-[10px] font-bold opacity-70 uppercase tracking-widest mb-1">福岡即時氣溫</div>
+                        <div class="text-4xl font-black">{{ currentTemp }}°C</div>
+                    </div>
+                    <div class="text-right">
+                        <i class="fas fa-cloud-sun text-3xl opacity-40"></i>
+                        <div class="text-xs mt-2 font-bold">{{ weatherDesc }}</div>
+                    </div>
+                </div>
+
+                <div class="mb-10 p-4 bg-gray-50 rounded-2xl border flex justify-between items-center">
+                    <div class="flex-grow">
+                        <span class="text-[9px] text-gray-400 font-bold block mb-1">住宿飯店</span>
+                        <input v-model="hotel.name" @change="syncData" class="bg-transparent border-none font-bold text-sm w-full focus:outline-none">
+                    </div>
+                    <button @click="openMaps(hotel.name)" class="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-blue-500">
+                        <i class="fas fa-directions"></i>
+                    </button>
                 </div>
 
                 <div class="space-y-10 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] before:bg-gray-100">
@@ -105,56 +118,43 @@
                         <div class="absolute left-0 top-1.5 w-6 h-6 bg-white border-2 border-black rounded-full flex items-center justify-center z-10 shadow-sm">
                             <div class="w-1.5 h-1.5 bg-black rounded-full"></div>
                         </div>
-                        <div class="group">
-                            <input v-model="event.time" @change="updateItinerary" class="text-[10px] font-mono text-gray-400 w-full focus:outline-none mb-1">
-                            <input v-model="event.location" @change="updateItinerary" class="edit-input text-base text-gray-900 mb-1">
-                            <textarea v-model="event.desc" @change="updateItinerary" class="text-xs text-gray-400 w-full bg-transparent focus:outline-none resize-none" rows="1"></textarea>
+                        <div class="flex justify-between items-start group">
+                            <div class="flex-grow">
+                                <input v-model="event.time" @change="syncData" class="text-[10px] font-mono text-gray-400 w-full focus:outline-none mb-1 bg-transparent" placeholder="時間">
+                                <input v-model="event.location" @change="syncData" class="font-bold text-gray-900 w-full focus:outline-none bg-transparent" placeholder="地點名稱">
+                                <textarea v-model="event.desc" @change="syncData" class="text-xs text-gray-400 w-full bg-transparent focus:outline-none resize-none mt-1" rows="1" placeholder="備註內容"></textarea>
+                            </div>
+                            <button @click="openMaps(event.location)" class="mt-4 text-gray-300 hover:text-blue-500 transition">
+                                <i class="fas fa-map-marker-alt text-lg"></i>
+                            </button>
                         </div>
                     </div>
+                    <button @click="addEvent" class="ml-10 text-[10px] font-bold text-blue-500 border border-blue-100 px-3 py-1 rounded-full">+ 新增項目</button>
                 </div>
             </div>
 
-            <div v-show="activeTab === 'map'" class="p-4 h-full">
-                <div id="google-map" class="shadow-2xl border"></div>
-                <button @click="centerOnUser" class="mt-4 w-full py-4 bg-black text-white rounded-2xl font-bold shadow-lg flex items-center justify-center">
-                    <i class="fas fa-location-arrow mr-2"></i> 顯示我的位置
-                </button>
-            </div>
-
-            <div v-show="activeTab === 'fx'" class="p-10 text-center">
-                <h2 class="text-2xl font-bold mb-10 tracking-tight">多人同步換算</h2>
-                <div class="space-y-12">
-                    <div class="relative">
-                        <label class="text-[10px] font-bold text-gray-400 uppercase absolute -top-6 left-0">日幣 JPY</label>
-                        <input type="number" v-model="jpy" @input="convertFX('jpy')" class="text-5xl font-mono w-full text-right border-b-2 border-gray-100 focus:outline-none focus:border-black py-2" placeholder="0">
-                    </div>
-                    <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-gray-300">
-                        <i class="fas fa-exchange-alt rotate-90"></i>
-                    </div>
-                    <div class="relative">
-                        <label class="text-[10px] font-bold text-gray-400 uppercase absolute -top-6 left-0">台幣 TWD</label>
-                        <input type="number" v-model="twd" @input="convertFX('twd')" class="text-5xl font-mono w-full text-right border-b-2 border-gray-100 focus:outline-none focus:border-black py-2" placeholder="0">
-                    </div>
+            <div v-show="activeTab === 'fx'" class="p-10 space-y-12">
+                <div class="text-center mb-4">
+                    <h2 class="text-2xl font-black">多人即時換算</h2>
+                    <p class="text-[10px] text-gray-400 mt-2">輸入金額，朋友手機會同步更新結果</p>
                 </div>
-                <p class="mt-12 text-[10px] text-gray-300">匯率預設：0.21 | 所有人可見即時結果</p>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2 tracking-widest">日幣 JPY</label>
+                    <input type="number" v-model="jpy" @input="convertFX('jpy')" class="fx-input text-5xl font-mono" placeholder="0">
+                </div>
+                <div class="flex justify-center text-gray-200">
+                    <i class="fas fa-sync-alt rotate-90 text-2xl"></i>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2 tracking-widest">台幣 TWD (匯率 0.21)</label>
+                    <input type="number" v-model="twd" @input="convertFX('twd')" class="fx-input text-5xl font-mono" placeholder="0">
+                </div>
             </div>
         </main>
-
-        <nav class="fixed bottom-0 left-0 right-0 h-20 bg-white border-t flex justify-around items-center px-4 tab-bar z-[2000]">
-            <button @click="activeTab = 'trip'" :class="activeTab === 'trip' ? 'text-black' : 'text-gray-300'" class="flex flex-col items-center w-1/3">
-                <i class="fas fa-calendar-alt text-xl"></i><span class="text-[9px] mt-1 font-bold">行程</span>
-            </button>
-            <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-black' : 'text-gray-300'" class="flex flex-col items-center w-1/3">
-                <i class="fas fa-map-marked-alt text-xl"></i><span class="text-[9px] mt-1 font-bold">地圖</span>
-            </button>
-            <button @click="activeTab = 'fx'" :class="activeTab === 'fx' ? 'text-black' : 'text-gray-300'" class="flex flex-col items-center w-1/3">
-                <i class="fas fa-coins text-xl"></i><span class="text-[9px] mt-1 font-bold">匯率</span>
-            </button>
-        </nav>
     </div>
 
     <script>
-        const { createApp, ref, onMounted, watch } = Vue;
+        const { createApp, ref, onMounted } = Vue;
 
         createApp({
             setup() {
@@ -163,86 +163,69 @@
                 const jpy = ref(null);
                 const twd = ref(null);
                 const rate = 0.21;
-                const hotel = ref({ name: '讀取中...', phone: '' });
+                const hotel = ref({ name: '', phone: '' });
                 const itinerary = ref([]);
-                let map, userMarker, markers = [];
+                
+                // 天氣相關
+                const currentTemp = ref('--');
+                const weatherDesc = ref('讀取中...');
 
-                // 核心同步邏輯
+                // Firebase 初始化
                 const initFirebase = () => {
-                    const db = window.fbDB;
-                    if (!db) return setTimeout(initFirebase, 500);
-
-                    window.fbOnValue(window.fbRef(db, '/'), (snapshot) => {
+                    if (!window.fb) return setTimeout(initFirebase, 500);
+                    window.fb.onValue(window.fb.ref(window.fb.db, '/'), (snapshot) => {
                         const data = snapshot.val();
                         if (data) {
                             itinerary.value = data.itinerary || [];
                             hotel.value = data.hotel || { name: '', phone: '' };
-                            if (data.sharedFX) {
-                                jpy.value = data.sharedFX.jpy;
-                                twd.value = data.sharedFX.twd;
-                            }
-                            if (activeTab.value === 'map') updateMarkers();
+                            if (data.sharedFX) { jpy.value = data.sharedFX.jpy; twd.value = data.sharedFX.twd; }
                         }
                     });
                 };
 
-                const updateHotel = () => { window.fbUpdate(window.fbRef(window.fbDB, 'hotel'), hotel.value); };
-                const updateItinerary = () => { window.fbUpdate(window.fbRef(window.fbDB, '/'), { itinerary: itinerary.value }); };
-                const forceSync = () => { window.uploadToCloud(); };
+                // 抓取福岡即時氣溫
+                const fetchWeather = async () => {
+                    try {
+                        // 使用公開的 OpenWeather API (範例使用福岡市)
+                        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Fukuoka&units=metric&lang=zh_tw&appid=cedae7f40c8e9c11a1307668eabe4580`);
+                        const data = await res.json();
+                        if (data.main) {
+                            currentTemp.value = Math.round(data.main.temp);
+                            weatherDesc.value = data.weather[0].description;
+                        }
+                    } catch (e) { weatherDesc.value = "氣候資料暫不適用"; }
+                };
+
+                // 同步資料至雲端
+                const syncData = () => {
+                    window.fb.update(window.fb.ref(window.fb.db, '/'), {
+                        itinerary: JSON.parse(JSON.stringify(itinerary.value)),
+                        hotel: hotel.value
+                    });
+                };
 
                 const convertFX = (type) => {
                     let j, t;
-                    if (type === 'jpy') {
-                        j = jpy.value; t = j ? Math.round(j * rate) : null;
-                    } else {
-                        t = twd.value; j = t ? Math.round(t / rate) : null;
-                    }
-                    window.fbUpdate(window.fbRef(window.fbDB, 'sharedFX'), { jpy: j, twd: t });
+                    if (type === 'jpy') { j = jpy.value; t = j ? Math.round(j * rate) : null; }
+                    else { t = twd.value; j = t ? Math.round(t / rate) : null; }
+                    window.fb.update(window.fb.ref(window.fb.db, 'sharedFX'), { jpy: j, twd: t });
                 };
 
-                // 地圖功能
-                const initMap = () => {
-                    if (map) return updateMarkers();
-                    map = new google.maps.Map(document.getElementById("google-map"), {
-                        zoom: 14, center: { lat: 33.5902, lng: 130.4017 }, disableDefaultUI: true,
-                        styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }]
-                    });
-                    trackUser();
-                    updateMarkers();
+                const addEvent = () => {
+                    if (!itinerary.value[activeDayIndex.value].events) itinerary.value[activeDayIndex.value].events = [];
+                    itinerary.value[activeDayIndex.value].events.push({ time: "12:00", location: "新景點", desc: "編輯備註" });
+                    syncData();
                 };
 
-                const updateMarkers = () => {
-                    markers.forEach(m => m.setMap(null));
-                    markers = [];
-                    const day = itinerary.value[activeDayIndex.value];
-                    if (!day || !day.coords) return;
-                    
-                    const bounds = new google.maps.LatLngBounds();
-                    day.coords.forEach(coord => {
-                        const m = new google.maps.Marker({ position: coord, map: map, animation: google.maps.Animation.DROP });
-                        markers.push(m);
-                        bounds.extend(coord);
-                    });
-                    if (day.coords.length > 0) map.fitBounds(bounds, 80);
-                };
+                const openMaps = (loc) => { if(loc) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`, '_blank'); };
+                const forceReset = () => { window.resetCloudData(); };
 
-                const trackUser = () => {
-                    if (navigator.geolocation) {
-                        navigator.geolocation.watchPosition(pos => {
-                            const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                            if (!userMarker) userMarker = new google.maps.Marker({ position: p, map: map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#4285F4', fillOpacity: 1, strokeColor: 'white', strokeWeight: 2 }});
-                            else userMarker.setPosition(p);
-                        });
-                    }
-                };
+                onMounted(() => { 
+                    initFirebase(); 
+                    fetchWeather();
+                });
 
-                const centerOnUser = () => { if (userMarker) map.panTo(userMarker.getPosition()); };
-                const changeDay = (index) => { activeDayIndex.value = index; if (activeTab.value === 'map') updateMarkers(); };
-
-                watch(activeTab, (t) => { if (t === 'map') setTimeout(initMap, 100); });
-                onMounted(() => { setTimeout(initFirebase, 1000); });
-
-                return { activeTab, activeDayIndex, itinerary, hotel, jpy, twd, changeDay, convertFX, centerOnUser, updateHotel, updateItinerary, forceSync };
+                return { activeTab, activeDayIndex, itinerary, hotel, jpy, twd, currentTemp, weatherDesc, convertFX, syncData, openMaps, forceReset, addEvent };
             }
         }).mount('#app');
     </script>
