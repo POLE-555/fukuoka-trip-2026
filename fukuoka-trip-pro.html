@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="福岡2026">
+
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/826/826070.png">
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/826/826070.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>福岡 2026 雲端同步版</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    // --- 1. 請填入您的 Firebase 配置 ---
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+        projectId: "YOUR_PROJECT",
+        storageBucket: "YOUR_PROJECT.appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // 掛載到 window 供 App 使用
+    window.fbDB = db;
+    window.fbRef = ref;
+    window.fbOnValue = onValue;
+    window.fbSet = set;
+    window.fbUpdate = update;
+
+    // --- 2. 初始化資料腳本 ---
+    const initData = {
+        hotel: {
+            name: "Best Western Plus 福岡天神南",
+            phone: "+81 927187700"
+        },
+        itinerary: [
+            { date: "03-03", week: "週二", events: [{time: "15:25", location: "抵達福岡空港", desc: "虎航 IT270 班機"}, {time: "晚上", location: "麵屋兼虎 天神本店", desc: "品嚐知名沾麵"}]},
+            { date: "03-04", week: "週三", events: [{time: "早上", location: "運河城 & 櫛田神社", desc: "市區參拜與逛街"}, {time: "晚上", location: "藥院燒肉", desc: "晚餐預約"}]},
+            { date: "03-05", week: "週四", events: [{time: "全天", location: "高千穗/阿蘇山一日遊", desc: "九州大自然景觀行程"}]},
+            { date: "03-06", week: "週五", events: [{time: "全天", location: "太宰府", desc: "天滿宮參拜與商店街散策"}]},
+            { date: "03-07", week: "週六", events: [{time: "全天", location: "由布院/自然動物園一日遊", desc: "KKday 專屬團行程"}]},
+            { date: "03-08", week: "週日", events: [{time: "全天", location: "門司港", desc: "海港古蹟與燒咖哩"}]},
+            { date: "03-09", week: "週一", events: [{time: "全天", location: "糸島一日遊", desc: "白絲瀑布、二見浦夫婦岩"}]},
+            { date: "03-10", week: "週二", events: [{time: "全天", location: "能古島", desc: "搭船前往花卉公園"}]},
+            { date: "03-11", week: "週三", events: [{time: "全天", location: "LaLaport 福岡", desc: "觀賞 1:1 實物大鋼彈"}]},
+            { date: "03-12", week: "週四", events: [{time: "全天", location: "運河城 & 櫛田神社", desc: "市區最後採買"}]},
+            { date: "03-13", week: "週五", events: [{time: "19:55", location: "福岡空港", desc: "虎航 IT271 回程"}]}
+        ],
+        sharedFX: { jpy: 0, twd: 0 }
+    };
+
+    // --- 3. 執行上傳函式 ---
+    async function uploadToCloud() {
+        try {
+            await set(ref(db, '/'), initData);
+            console.log("資料同步成功！");
+            alert("雲端資料初始化完成！");
+        } catch (e) {
+            console.error("同步失敗:", e);
+        }
+    }
+
+    // 解除註解以執行一次上傳
+    uploadToCloud(); 
+
+</script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_KEY"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        body { background-color: #ffffff; font-family: 'Noto Sans TC', sans-serif; color: #1a1a1a; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .date-active { background: #1a1a1a; color: white !important; transform: scale(1.05); }
+        #google-map { height: 75vh; width: 100%; border-radius: 24px; }
+        .fx-input { border: none; border-bottom: 2px solid #f0f0f0; background: transparent; transition: 0.3s; width: 100%; text-align: right; }
+        .fx-input:focus { outline: none; border-bottom-color: #1a1a1a; }
+    </style>
+</head>
+<body class="antialiased">
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col relative bg-white pb-24">
+        
+        <header class="sticky top-0 z-[1000] bg-white/90 backdrop-blur-md pt-6 pb-2 px-5 border-b border-gray-50">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-xl font-bold tracking-tighter">福岡 2026 <i class="fas fa-cloud text-[10px] text-blue-400"></i></h1>
+                <div class="bg-gray-100 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">
+                    {{ activeTabName }}模式
+                </div>
+            </div>
+            
+            <div class="flex overflow-x-auto hide-scrollbar gap-3 py-2 scroll-smooth">
+                <div v-for="(day, index) in itinerary" :key="index" 
+                     @click="changeDay(index)"
+                     :class="['flex-shrink-0 w-12 h-16 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all', 
+                              activeDayIndex === index ? 'date-active shadow-lg' : 'bg-gray-50 text-gray-400']">
+                    <span class="text-[8px] font-bold">{{day.week}}</span>
+                    <span class="text-base font-black">{{day.date.split('-')[1]}}</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <div v-show="activeTab === 'trip'" class="p-6">
+                <div class="mb-8 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase">住宿飯店</span>
+                        <i class="fas fa-sync text-[10px] text-green-500"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900">{{ hotel.name }}</h3>
+                    <p class="text-xs text-gray-400 mt-1 font-mono">
+                        <i class="fas fa-phone-alt mr-1"></i> {{ hotel.phone }}
+                    </p>
+                </div>
+
+                <div class="space-y-10 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] before:bg-gray-100">
+                    <div v-for="(event, eIndex) in itinerary[activeDayIndex]?.events" :key="eIndex" class="relative pl-10">
+                        <div class="absolute left-0 top-1.5 w-[24px] h-[24px] bg-white border-2 border-black rounded-full flex items-center justify-center z-10 shadow-sm">
+                            <div class="w-1.5 h-1.5 bg-black rounded-full"></div>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-mono text-gray-400 block mb-1 uppercase tracking-tighter">{{event.time}}</span>
+                            <h3 class="font-bold text-gray-900 leading-tight">{{event.location}}</h3>
+                            <p class="text-xs text-gray-400 mt-1 font-light">{{event.desc}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-show="activeTab === 'map'" class="p-4 h-full">
+                <div id="google-map" class="shadow-2xl"></div>
+            </div>
+
+            <div v-show="activeTab === 'fx'" class="p-8">
+                <h2 class="text-2xl font-black italic mb-10 text-center">多人即時換算</h2>
+                <div class="space-y-12">
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 block mb-2">日幣 (JPY)</label>
+                        <input type="number" v-model="jpy" @input="syncFX('jpy')" class="fx-input text-5xl font-mono" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 block mb-2">台幣 (TWD)</label>
+                        <input type="number" v-model="twd" @input="syncFX('twd')" class="fx-input text-5xl font-mono" placeholder="0">
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <nav class="fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex justify-around items-center px-4 z-[2000]">
+            <button @click="activeTab = 'trip'" :class="activeTab === 'trip' ? 'text-black' : 'text-gray-300'" class="flex flex-col items-center w-1/3">
+                <i class="fas fa-calendar-alt text-xl"></i>
+                <span class="text-[9px] mt-1 font-black uppercase">行程</span>
+            </button>
+            <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-black' : 'text-gray-300'" class="flex flex-col items-center w-1/3">
+                <i class="fas fa-map-marked-alt text-xl"></i>
+                <span class="text-[9px] mt-1 font-black uppercase">地圖</span>
+            </button>
+            <button @click="activeTab = 'fx'" :class="activeTab === 'fx' ? 'text-black' : 'text-gray-300'" class="flex flex-col items-center w-1/3">
+                <i class="fas fa-coins text-xl"></i>
+                <span class="text-[9px] mt-1 font-black uppercase">匯率</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const activeTab = ref('trip');
+                const activeDayIndex = ref(0);
+                const jpy = ref(null);
+                const twd = ref(null);
+                const rate = 0.21;
+                const hotel = ref({ name: '讀取中...', phone: '' });
+                const itinerary = ref([]);
+
+                const activeTabName = computed(() => ({'trip':'行程','map':'地圖','fx':'匯率'}[activeTab.value]));
+
+                // 初始化 Firebase 監聽
+                const initFirebase = () => {
+                    const db = window.fbDB;
+                    // 監聽飯店資訊
+                    window.fbOnValue(window.fbRef(db, 'hotel'), (snapshot) => {
+                        if (snapshot.exists()) hotel.value = snapshot.val();
+                    });
+
+                    // 監聽行程資料
+                    window.fbOnValue(window.fbRef(db, 'itinerary'), (snapshot) => {
+                        if (snapshot.exists()) itinerary.value = snapshot.val();
+                    });
+
+                    // 監聽共享匯率換算
+                    window.fbOnValue(window.fbRef(db, 'sharedFX'), (snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            jpy.value = data.jpy;
+                            twd.value = data.twd;
+                        }
+                    });
+                };
+
+                // 當您輸入時，同步到雲端
+                const syncFX = (type) => {
+                    let val = type === 'jpy' ? jpy.value : twd.value;
+                    let targetVal = type === 'jpy' ? Math.round(val * rate) : Math.round(val / rate);
+                    
+                    window.fbUpdate(window.fbRef(window.fbDB, 'sharedFX'), {
+                        jpy: type === 'jpy' ? val : targetVal,
+                        twd: type === 'twd' ? val : targetVal
+                    });
+                };
+
+                // 地圖與其他邏輯...
+                // (此處省略部分重複的 Map 初始化代碼以保持簡潔)
+
+                onMounted(() => {
+                    setTimeout(initFirebase, 1000); 
+                });
+
+                return { activeTab, activeTabName, activeDayIndex, itinerary, hotel, jpy, twd, syncFX };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
