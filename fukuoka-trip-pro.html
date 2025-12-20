@@ -109,9 +109,7 @@
         
         <header class="sticky top-0 z-50 bg-[#f8f5e6]/95 backdrop-blur-sm pt-8 pb-4 px-5">
             <div class="text-center mb-6 relative">
-                <button @click="handleSync" class="absolute top-1 left-0 text-gray-300 hover:text-[#c0392b] p-2">
-                    <i class="fas fa-cloud-arrow-up text-xl"></i>
-                </button>
+
                 <div class="text-[10px] text-gray-400 tracking-[0.3em] font-bold">2026</div>
                 <h1 class="text-3xl font-black serif-font text-gray-800 tracking-tighter">福岡旅</h1>
             </div>
@@ -284,9 +282,6 @@
                     syncData();
                 };
 
-                const handleSync = () => { 
-                    if(confirm("即將從雲端更新並同步所有行程架構（含補全日期），是否繼續？")) window.syncCloudData(); 
-                };
 
                 onMounted(() => { initFirebase(); fetchWeather(); });
                 return { activeTab, activeDayIndex, itinerary, hotel, jpy, twd, hourlyWeather, currentSelectedDate, convertFX, syncData, openMaps, handleSync, addEvent, getWeatherIcon };
@@ -295,3 +290,4 @@
     </script>
 </body>
 </html>
+
