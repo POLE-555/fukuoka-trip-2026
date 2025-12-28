@@ -2,13 +2,11 @@
 <html lang="zh-TW">
 <head>
     <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="favicon.svg" />
-<link rel="shortcut icon" href="favicon.ico" />
-
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-<meta name="apple-mobile-web-app-title" content="2026福岡" />
-
-<link rel="manifest" href="site.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="2026福岡" />
+    <link rel="manifest" href="site.webmanifest" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>2026 福岡</title>
@@ -51,6 +49,9 @@
         .time-col { width: 52px; min-width: 52px; flex-shrink: 0; border-right: 1px solid #f3f4f6; padding-right: 0.35rem; margin-right: 0.65rem; }
         .time-input { font-family: 'Noto Serif TC', serif; font-weight: 900; text-align: center; background: transparent; border: none; outline: none; width: 100%; font-size: 15px; }
         .drag-handle { cursor: grab; color: #eee; padding-right: 8px; display: flex; align-items: center; }
+        .weather-now-bg { background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%); }
+        .weather-item { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; min-width: 50px; }
+        .action-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; }
     </style>
 </head>
 <body class="antialiased pb-28">
@@ -75,93 +76,123 @@
 
         <main class="p-5">
             <div v-show="activeTab === 'trip'">
-                <div class="card p-4 mb-8">
+                <!-- 天氣看板 -->
+                <div class="card p-4 mb-8 weather-now-bg">
                     <div class="flex justify-between items-center mb-3">
                         <div class="flex items-center gap-2">
-                          
-                            <span class="text-[11px] font-black text-gray-700 tracking-widest">{{ smartLocationName }} 預報</span>
+                            <span class="text-[11px] font-black text-gray-700 tracking-widest uppercase">
+                                {{ smartLocationName }} · {{ weatherStatusLabel }}
+                            </span>
                         </div>
-                        <span class="text-[9px] text-gray-300">{{ currentSelectedDate }}</span>
                     </div>
-                    <div v-if="hourlyWeather.length > 0" class="flex overflow-x-auto hide-scrollbar gap-5 pb-1">
-                        <div v-for="(h, i) in hourlyWeather" :key="i" class="flex flex-col items-center min-w-[42px]">
-                            <span class="text-[9px] text-gray-400 mb-1">{{ h.time }}</span>
-                            <i :class="getWeatherIcon(h.code)" class="text-base mb-1 text-blue-200"></i>
-                            <span class="font-bold text-xs">{{ Math.round(h.temp) }}°</span>
-                            <span class="text-[8px] text-blue-400 font-bold">{{ h.rain }}%</span>
+
+                    <div class="flex overflow-x-auto hide-scrollbar gap-4 py-2">
+                        <div v-for="(h, i) in hourlyWeather" :key="i" class="weather-item">
+                            <span class="text-[9px] font-bold text-gray-400 mb-2">{{ h.time }}</span>
+                            <i :class="[getWeatherIcon(h.code), h.isNow ? 'text-blue-600 scale-110' : 'text-blue-300']" class="text-lg mb-2"></i>
+                            <span class="font-black text-sm text-gray-800">{{ Math.round(h.temp) }}°</span>
+                            <span class="text-[8px] font-bold mt-1" :class="h.rain > 30 ? 'text-blue-500' : 'text-gray-300'">
+                                {{ h.rain !== '--' ? h.rain + '%' : '--' }}
+                            </span>
+                        </div>
+                        <div v-if="hourlyWeather.length === 0" class="w-full text-center py-4 text-gray-300 text-[10px] font-bold tracking-widest">
+                            無法獲取天氣資訊
                         </div>
                     </div>
                 </div>
-<div v-if="itinerary[activeDayIndex]" class="mb-6">
-    <a v-if="itinerary[activeDayIndex].date === '2026-03-05'" 
-       href="https://www.kkday.com/zh-tw/product/266452-mount-aso-kusasenri-takachiho-gorge-cruise-kyushu-one-day-tour?qs=%E9%AB%98%E5%8D%83" 
-       target="_blank" class="block bg-blue-600 p-4 rounded-2xl shadow-lg active:scale-95 transition-all text-center">
-        <div class="text-[10px] text-blue-100 font-bold tracking-widest uppercase mb-1">KKday 行程</div>
-        <div class="text-sm font-bold text-white">高千穗遊船一日遊</div>
-    </a>
 
-    <a v-if="itinerary[activeDayIndex].date === '2026-03-07'" 
-       href="https://www.kkday.com/zh-tw/product/175897" 
-       target="_blank" class="block bg-blue-600 p-4 rounded-2xl shadow-lg active:scale-95 transition-all text-center">
-        <div class="text-[10px] text-blue-100 font-bold tracking-widest uppercase mb-1">KKday 行程</div>
-        <div class="text-sm font-bold text-white">九州大分由布院動物園一日遊</div>
-    </a>
+                <!-- KKday / Klook 行程按鈕 -->
+                <div v-if="itinerary[activeDayIndex]" class="mb-6">
+                    <a v-if="itinerary[activeDayIndex].date === '2026-03-05'" 
+                       href="https://www.kkday.com/zh-tw/product/266452-mount-aso-kusasenri-takachiho-gorge-cruise-kyushu-one-day-tour?qs=%E9%AB%98%E5%8D%83" 
+                       target="_blank" class="block bg-blue-600 p-4 rounded-2xl shadow-lg active:scale-95 transition-all text-center">
+                        <div class="text-[10px] text-blue-100 font-bold tracking-widest uppercase mb-1">KKday 行程</div>
+                        <div class="text-sm font-bold text-white">高千穗遊船一日遊</div>
+                    </a>
 
-    <a v-if="itinerary[activeDayIndex].date === '2026-03-09'" 
-       href="https://www.klook.com/zh-TW/activity/114628-shiraito-falls-keya-no-ohto-sakurai-futamigauras-couple-stones-day-trip/?spm=SearchResult.SearchResult_LIST&clickId=dbcf008b29" 
-       target="_blank" class="block bg-orange-500 p-4 rounded-2xl shadow-lg active:scale-95 transition-all text-center">
-        <div class="text-[10px] text-orange-100 font-bold tracking-widest uppercase mb-1">Klook 行程</div>
-        <div class="text-sm font-bold text-white">糸島一日遊</div>
-    </a>
-</div>
+                    <a v-if="itinerary[activeDayIndex].date === '2026-03-07'" 
+                       href="https://www.kkday.com/zh-tw/product/175897" 
+                       target="_blank" class="block bg-blue-600 p-4 rounded-2xl shadow-lg active:scale-95 transition-all text-center">
+                        <div class="text-[10px] text-blue-100 font-bold tracking-widest uppercase mb-1">KKday 行程</div>
+                        <div class="text-sm font-bold text-white">九州大分由布院動物園一日遊</div>
+                    </a>
+
+                    <a v-if="itinerary[activeDayIndex].date === '2026-03-09'" 
+                       href="https://www.klook.com/zh-TW/activity/114628-shiraito-falls-keya-no-ohto-sakurai-futamigauras-couple-stones-day-trip/?spm=SearchResult.SearchResult_LIST&clickId=dbcf008b29" 
+                       target="_blank" class="block bg-orange-500 p-4 rounded-2xl shadow-lg active:scale-95 transition-all text-center">
+                        <div class="text-[10px] text-orange-100 font-bold tracking-widest uppercase mb-1">Klook 行程</div>
+                        <div class="text-sm font-bold text-white">糸島一日遊</div>
+                    </a>
+                </div>
+
+                <!-- 行程列表 -->
                 <div id="event-list" class="space-y-4">
-                    <div v-for="(event, eIndex) in itinerary[activeDayIndex]?.events" :key="eIndex" class="card p-4 flex items-center">
+                    <div v-for="(event, eIndex) in itinerary[activeDayIndex]?.events" :key="eIndex" class="card p-4 flex items-center min-h-[80px]">
                         <div class="drag-handle"><i class="fas fa-grip-lines-vertical text-[10px]"></i></div>
                         <div class="time-col"><input v-model="event.time" @change="syncData" class="time-input"></div>
                         <div class="flex-grow">
                             <div class="flex items-center mb-0.5">
                                 <input v-model="event.location" @change="syncData" class="edit-input font-bold text-sm text-gray-800" placeholder="地點">
-                                <button @click="openMaps(event.location)" class="ml-2 text-blue-400/60"><i class="fas fa-location-dot text-sm"></i></button>
                             </div>
                             <input v-model="event.desc" @change="syncData" class="edit-input text-[11px] text-gray-400" placeholder="備註描述">
                         </div>
-
-                        <button @click="removeEvent(eIndex)" class="ml-2 text-gray-200 hover:text-red-400 p-1"><i class="fas fa-trash-can text-[10px]"></i></button>
+                        
+                        <div class="flex items-center">
+                            <button @click="openMaps(event.location)" class="action-btn text-blue-400/60 hover:text-blue-500">
+                                <i class="fas fa-location-dot text-sm"></i>
+                            </button>
+                            <button @click="removeEvent(eIndex)" class="action-btn text-gray-200 hover:text-red-400">
+                                <i class="fas fa-trash-can text-[11px]"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <button @click="addEvent" class="w-full py-4 mt-6 text-[11px] font-bold text-gray-300 border border-dashed border-gray-200 rounded-2xl">+ 新增行程項目</button>
             </div>
 
+            <!-- 匯率工具 -->
             <div v-show="activeTab === 'fx'">
                 <div class="card p-8 text-center space-y-12">
-                    <h2 class="text-2xl font-serif font-bold text-gray-800">匯率換算</h2>
+                    <div class="flex flex-col items-center gap-2">
+                        <h2 class="text-2xl font-serif font-bold text-gray-800">匯率換算</h2>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full" v-if="rate">1 JPY = {{ rate }} TWD</span>
+                            <button @click="fetchExchangeRate" class="text-gray-300 hover:text-gray-500 transition-all active:rotate-180" :class="{ 'animate-spin': isRefreshingRate }">
+                                <i class="fas fa-arrows-rotate text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
                     <div>
-                        <label class="text-[10px] font-bold text-gray-400 block mb-2 tracking-widest">日幣金額 (JPY)</label>
+                        <label class="text-[10px] font-bold text-gray-400 block mb-2 tracking-widest uppercase">日幣金額 (JPY)</label>
                         <input type="number" v-model="jpy" @input="convertFX('jpy')" class="font-serif text-5xl w-full text-center border-b-2 border-gray-50 py-2 outline-none bg-transparent">
                     </div>
                     <div class="flex justify-center text-[#c0392b] opacity-20"><i class="fas fa-sync rotate-90 text-2xl"></i></div>
                     <div>
-                        <label class="text-[10px] font-bold text-gray-400 block mb-2 tracking-widest">台幣金額 (TWD)</label>
+                        <label class="text-[10px] font-bold text-gray-400 block mb-2 tracking-widest uppercase">台幣金額 (TWD)</label>
                         <input type="number" v-model="twd" @input="convertFX('twd')" class="font-serif text-5xl w-full text-center border-b-2 border-gray-50 py-2 outline-none bg-transparent">
                     </div>
                 </div>
             </div>
 
+            <!-- 口袋名單 -->
             <div v-show="activeTab === 'others'">
                 <div class="space-y-4">
-                    <div v-for="(item, oIndex) in otherList" :key="oIndex" class="card p-5 flex items-center gap-4 transition-all">
+                    <div v-for="(item, oIndex) in otherList" :key="oIndex" class="card p-5 flex items-center min-h-[80px] gap-4 transition-all">
                         <div class="flex-grow">
                             <div class="flex items-center gap-2 mb-1">
                                 <input v-model="item.name" @change="syncData" class="edit-input font-black text-base text-gray-800" placeholder="美食或景點名稱">
-                                <button @click="openMaps(item.name)" class="text-blue-500 hover:scale-110 transition-transform">
-                                    <i class="fas fa-store text-lg"></i>
-                                </button>
                             </div>
                             <input v-model="item.note" @change="syncData" class="edit-input text-xs text-gray-400" placeholder="備註">
                         </div>
-                        <button @click="removeOther(oIndex)" class="text-gray-200 hover:text-red-400 p-1">
-                            <i class="fas fa-trash-can text-[10px]"></i>
-                        </button>
+                        
+                        <div class="flex items-center">
+                            <button @click="openMaps(item.name)" class="action-btn text-blue-500 hover:scale-110 transition-transform">
+                                <i class="fas fa-store text-lg"></i>
+                            </button>
+                            <button @click="removeOther(oIndex)" class="action-btn text-gray-200 hover:text-red-400">
+                                <i class="fas fa-trash-can text-[11px]"></i>
+                            </button>
+                        </div>
                     </div>
                     <button @click="addOther" class="w-full py-4 mt-2 text-[11px] font-bold text-gray-300 border border-dashed border-gray-200 rounded-2xl">+ 新增名單</button>
                 </div>
@@ -169,6 +200,7 @@
 
         </main>
 
+        <!-- 底部導覽 -->
         <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] h-16 bg-white/90 backdrop-blur-md shadow-2xl rounded-full flex justify-around items-center px-4 z-50">
             <button @click="activeTab = 'trip'" :class="['flex flex-col items-center gap-1 w-1/3', activeTab === 'trip' ? 'text-[#c0392b]' : 'text-gray-300']">
                 <i class="fas fa-calendar-day text-lg"></i>
@@ -193,12 +225,16 @@
                 const activeDayIndex = ref(0);
                 const jpy = ref(null);
                 const twd = ref(null);
-                const rate = 0.21;
+                const rate = ref(0.21);
+                const isRefreshingRate = ref(false); 
                 const hotel = ref({ name: '', phone: '' });
                 const itinerary = ref([]);
-                const otherList = ref([]); // 新增：其他清單
+                const otherList = ref([]); 
+                
                 const weatherData = ref({}); 
+                const currentWeather = ref(null);
                 const hourlyWeather = ref([]);
+                const isCurrentWeatherOnly = ref(false);
 
                 const smartLocationName = computed(() => {
                     const now = new Date();
@@ -213,6 +249,18 @@
 
                 const currentSelectedDate = computed(() => itinerary.value[activeDayIndex.value]?.date || '');
 
+                // 新增：智慧型天氣狀態標籤
+                const weatherStatusLabel = computed(() => {
+                    if (isCurrentWeatherOnly.value) return "即時天氣";
+                    if (currentSelectedDate.value) {
+                        const dateParts = currentSelectedDate.value.split('-');
+                        if (dateParts.length === 3) {
+                            return `${parseInt(dateParts[1])}/${dateParts[2]} 預報`;
+                        }
+                    }
+                    return "預報";
+                });
+
                 const initFirebase = () => {
                     if (!window.fb) return setTimeout(initFirebase, 500);
                     window.fb.onValue(window.fb.ref(window.fb.db, '/'), (snapshot) => {
@@ -220,7 +268,7 @@
                         if (data) {
                             itinerary.value = data.itinerary || [];
                             hotel.value = data.hotel || { name: '', phone: '' };
-                            otherList.value = data.otherList || []; // 載入其他清單
+                            otherList.value = data.otherList || []; 
                             if (data.sharedFX) { jpy.value = data.sharedFX.jpy; twd.value = data.sharedFX.twd; }
                         }
                     });
@@ -228,36 +276,83 @@
 
                 const fetchWeather = async () => {
                     try {
-                        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&hourly=temperature_2m,weathercode,precipitation_probability&timezone=Asia%2FTokyo&forecast_days=14`);
+                        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&current_weather=true&hourly=temperature_2m,weathercode,precipitation_probability&timezone=Asia%2FTokyo&forecast_days=14`);
                         const data = await res.json();
                         weatherData.value = data.hourly;
+                        currentWeather.value = data.current_weather;
                         updateHourlyDisplay();
-                    } catch (e) { console.error("天氣失敗"); }
+                    } catch (e) { 
+                        console.error("天氣獲取失敗", e); 
+                    }
+                };
+
+                const fetchExchangeRate = async () => {
+                    isRefreshingRate.value = true;
+                    try {
+                        const res = await fetch('https://www.floatrates.com/daily/jpy.json');
+                        const data = await res.json();
+                        if (data && data.twd) {
+                            rate.value = parseFloat(data.twd.rate.toFixed(4));
+                            if (jpy.value) convertFX('jpy');
+                            else if (twd.value) convertFX('twd');
+                        }
+                    } catch (e) { 
+                        console.error("匯率獲取失敗", e);
+                    } finally {
+                        setTimeout(() => { isRefreshingRate.value = false; }, 500);
+                    }
                 };
 
                 const updateHourlyDisplay = () => {
                     if (!weatherData.value.time) return;
                     const now = new Date();
                     const currentHour = now.getHours();
+                    const todayStr = now.toISOString().split('T')[0];
                     const selectedDate = currentSelectedDate.value;
-                    const todayDateStr = now.toISOString().split('T')[0];
                     const display = [];
+                    let hasForecastData = false;
+                    
                     weatherData.value.time.forEach((t, index) => {
                         const [date, time] = t.split('T');
                         const h = parseInt(time.split(':')[0]);
                         if (date === selectedDate) {
-                            if (date !== todayDateStr || h >= currentHour) {
-                                display.push({ time: time, temp: weatherData.value.temperature_2m[index], code: weatherData.value.weathercode[index], rain: weatherData.value.precipitation_probability[index] });
-                            }
+                            hasForecastData = true;
+                            const isNow = (date === todayStr && h === currentHour);
+                            display.push({ 
+                                time: time, 
+                                temp: weatherData.value.temperature_2m[index], 
+                                code: weatherData.value.weathercode[index], 
+                                rain: weatherData.value.precipitation_probability[index],
+                                isNow: isNow
+                            });
                         }
                     });
+
+                    if (!hasForecastData || display.length === 0) {
+                        isCurrentWeatherOnly.value = true;
+                        if (currentWeather.value) {
+                            display.push({
+                                time: "Now",
+                                temp: currentWeather.value.temperature,
+                                code: currentWeather.value.weathercode,
+                                rain: "--",
+                                isNow: true
+                            });
+                        }
+                    } else {
+                        isCurrentWeatherOnly.value = false;
+                    }
                     hourlyWeather.value = display;
                 };
 
                 const getWeatherIcon = (code) => {
                     if (code <= 1) return 'fas fa-sun';
                     if (code <= 3) return 'fas fa-cloud-sun';
-                    if (code >= 61) return 'fas fa-cloud-rain';
+                    if (code >= 51 && code <= 57) return 'fas fa-cloud-rain';
+                    if (code >= 61 && code <= 67) return 'fas fa-cloud-showers-heavy';
+                    if (code >= 71 && code <= 77) return 'fas fa-snowflake';
+                    if (code >= 80 && code <= 82) return 'fas fa-cloud-showers-water';
+                    if (code >= 95) return 'fas fa-cloud-bolt';
                     return 'fas fa-cloud';
                 };
 
@@ -277,52 +372,79 @@
                 };
 
                 const syncData = () => {
+                    if (!window.fb) return;
                     window.fb.update(window.fb.ref(window.fb.db, '/'), {
                         itinerary: JSON.parse(JSON.stringify(itinerary.value)),
                         hotel: hotel.value,
-                        otherList: JSON.parse(JSON.stringify(otherList.value)) // 同步其他清單
+                        otherList: JSON.parse(JSON.stringify(otherList.value)) 
                     });
                 };
 
-                watch(activeDayIndex, () => { updateHourlyDisplay(); nextTick(() => initSortable()); });
-                watch(activeTab, () => { if(activeTab.value === 'trip') nextTick(() => initSortable()); });
+                watch(activeDayIndex, () => { 
+                    updateHourlyDisplay(); 
+                    nextTick(() => initSortable()); 
+                });
 
-                const openMaps = (loc) => { if(loc) window.open(`https://www.google.com/maps/search/${encodeURIComponent(loc)}`, '_blank'); };
+                watch(activeTab, () => { 
+                    if(activeTab.value === 'trip') nextTick(() => initSortable()); 
+                });
+
+                const openMaps = (loc) => { 
+                    if(loc) window.open(`https://www.google.com/maps/search/${encodeURIComponent(loc)}`, '_blank'); 
+                };
                 
-                // 行程操作
                 const addEvent = () => {
                     if (!itinerary.value[activeDayIndex.value].events) itinerary.value[activeDayIndex.value].events = [];
                     itinerary.value[activeDayIndex.value].events.push({ time: "12:00", location: "", desc: "" });
                     syncData();
                 };
-                const removeEvent = (eIndex) => { if (confirm("確定刪除此行程？")) { itinerary.value[activeDayIndex.value].events.splice(eIndex, 1); syncData(); } };
+
+                const removeEvent = (eIndex) => { 
+                    if (confirm("確定刪除此行程項目？")) { 
+                        itinerary.value[activeDayIndex.value].events.splice(eIndex, 1); 
+                        syncData(); 
+                    } 
+                };
                 
-                // 其他清單操作
                 const addOther = () => {
                     otherList.value.push({ name: "", note: "" });
                     syncData();
                 };
-                const removeOther = (oIndex) => { if (confirm("確定刪除此名單項目？")) { otherList.value.splice(oIndex, 1); syncData(); } };
+
+                const removeOther = (oIndex) => { 
+                    if (confirm("確定刪除此口袋名單？")) { 
+                        otherList.value.splice(oIndex, 1); 
+                        syncData(); 
+                    } 
+                };
 
                 const convertFX = (type) => {
                     let j, t;
-                    if (type === 'jpy') { j = jpy.value; t = j ? Math.round(j * rate) : null; }
-                    else { t = twd.value; j = t ? Math.round(t / rate) : null; }
+                    if (type === 'jpy') { 
+                        j = jpy.value; 
+                        t = j ? Math.round(j * rate.value) : null; 
+                    } else { 
+                        t = twd.value; 
+                        j = t ? Math.round(t / rate.value) : null; 
+                    }
                     window.fb.update(window.fb.ref(window.fb.db, 'sharedFX'), { jpy: j, twd: t });
                 };
 
-                onMounted(() => { initFirebase(); fetchWeather(); initSortable(); });
+                onMounted(() => { 
+                    initFirebase(); 
+                    fetchWeather(); 
+                    fetchExchangeRate();
+                    initSortable(); 
+                });
 
                 return { 
                     activeTab, activeDayIndex, itinerary, hotel, jpy, twd, otherList,
-                    hourlyWeather, currentSelectedDate, smartLocationName,
-                    convertFX, syncData, openMaps, addEvent, removeEvent, addOther, removeOther, getWeatherIcon 
+                    hourlyWeather, currentSelectedDate, smartLocationName, rate, isRefreshingRate, isCurrentWeatherOnly,
+                    weatherStatusLabel,
+                    fetchExchangeRate, convertFX, syncData, openMaps, addEvent, removeEvent, addOther, removeOther, getWeatherIcon 
                 };
             }
         }).mount('#app');
     </script>
 </body>
 </html>
-
-
-
